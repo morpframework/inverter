@@ -8,6 +8,8 @@ parts/
 develop-eggs/
 dev/
 venv/
+dist/
+__pycache__/
 .mypy_cache/
 .installed.cfg
 .mr.developer.cfg
