@@ -8,7 +8,7 @@ def _set_nullable(prop):
     return prop
 
 
-def jsonobject_to_jsl(schema, nullable=False):
+def jsonobject2jsl(schema, nullable=False):
     # output jsl schema from jsonobject schema
     attrs = {}
 
@@ -51,7 +51,7 @@ def jsonobject_property_to_jsl_field(
         return jsl.BooleanField(name=prop.name, required=prop.required)
     if isinstance(prop, jsonobject.DictProperty):
         if prop.item_wrapper:
-            subtype = jsonobject_to_jsl(prop.item_wrapper.item_type, nullable=nullable)
+            subtype = jsonobject2jsl(prop.item_wrapper.item_type, nullable=nullable)
             return jsl.DocumentField(
                 name=prop.name, document_cls=subtype, required=prop.required
             )
@@ -61,7 +61,7 @@ def jsonobject_property_to_jsl_field(
             if isinstance(prop.item_wrapper, jsonobject.ObjectProperty):
                 if issubclass(prop.item_wrapper.item_type, jsonobject.JsonObject):
                     subtype = jsl.DocumentField(
-                        document_cls=jsonobject_to_jsl(prop.item_wrapper.item_type),
+                        document_cls=jsonobject2jsl(prop.item_wrapper.item_type),
                         nullable=nullable,
                     )
                 elif isinstance(prop.item_wrapper.item_type, jsonobject.JsonProperty):
@@ -85,3 +85,4 @@ def jsonobject_property_to_jsl_field(
 
     raise KeyError(prop)
 
+convert = jsonobject2jsl

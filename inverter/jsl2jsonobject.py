@@ -17,7 +17,7 @@ def jsl_field_to_jsonobject_property(prop: jsl.BaseField) -> jsonobject.JsonProp
         return jsonobject.BooleanProperty(name=prop.name, required=prop.required)
     if isinstance(prop, jsl.DocumentField):
         if prop.document_cls:
-            subtype = jsl_to_jsonobject(prop.document_cls)
+            subtype = jsl2jsonobject(prop.document_cls)
             return jsonobject.DictProperty(
                 name=prop.name, item_type=subtype, required=prop.required
             )
@@ -25,7 +25,7 @@ def jsl_field_to_jsonobject_property(prop: jsl.BaseField) -> jsonobject.JsonProp
     if isinstance(prop, jsl.ArrayField):
         if prop.items:
             if isinstance(prop.items, jsl.DocumentField):
-                subtype = jsl_to_jsonobject(prop.items.document_cls)
+                subtype = jsl2jsonobject(prop.items.document_cls)
             elif isinstance(prop.items, jsl.BaseField):
                 subtype = jsl_field_to_jsonobject_property(prop.items)
             else:
@@ -36,7 +36,7 @@ def jsl_field_to_jsonobject_property(prop: jsl.BaseField) -> jsonobject.JsonProp
     raise KeyError(prop)
 
 
-def jsl_to_jsonobject(schema):
+def jsl2jsonobject(schema):
     # output jsonobject schema from jsl schema
     attrs = {}
     for attr, prop in schema._fields.items():
@@ -47,3 +47,4 @@ def jsl_to_jsonobject(schema):
 
     return Schema
 
+convert = jsl2jsonobject
