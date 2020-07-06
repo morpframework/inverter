@@ -4,7 +4,7 @@ import typing
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
 
-def dataclass_field_to_avsc_field(prop, schema, request):
+def convert_field(prop, schema, request):
     t = dataclass_get_type(prop)
     field = {"name": prop.name}
 
@@ -37,7 +37,7 @@ def dataclass_field_to_avsc_field(prop, schema, request):
         return field
 
     if is_dataclass_field(prop):
-        subtype = dataclass_to_avsc(prop, request=request)
+        subtype = dc2avsc(prop, request=request)
         return subtype
 
     if t["type"] == dict:
@@ -47,12 +47,12 @@ def dataclass_field_to_avsc_field(prop, schema, request):
     raise TypeError("Unknown Avro type for %s" % t["type"])
 
 
-def dataclass_to_avsc(
+def dc2avsc(
     schema,
     request,
     include_fields: typing.List[str] = None,
     exclude_fields: typing.List[str] = None,
-    namespace="morpcc",
+    namespace="inverter",
 ):
     result = {
         "namespace": namespace,
@@ -65,3 +65,5 @@ def dataclass_to_avsc(
         result["fields"].append(field)
 
     return result
+
+convert = dc2avsc

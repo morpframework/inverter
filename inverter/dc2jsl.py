@@ -1,8 +1,10 @@
 import dataclasses
-import jsl
-from .common import dataclass_get_type, dataclass_check_type, is_dataclass_field
 import typing
 from datetime import date, datetime
+
+import jsl
+
+from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
 
 def _set_nullable(prop):
@@ -11,9 +13,7 @@ def _set_nullable(prop):
     return prop
 
 
-def dataclass_to_jsl(
-    schema, nullable=False, additional_properties=False, update_mode=False
-):
+def dc2jsl(schema, nullable=False, additional_properties=False, update_mode=False):
     attrs = {}
 
     _additional_properties = additional_properties
@@ -91,7 +91,7 @@ def dataclass_field_to_jsl_field(
     if t:
         if update_mode:
             t["required"] = False
-        subtype = dataclass_to_jsl(t["schema"], nullable=nullable)
+        subtype = dc2jsl(t["schema"], nullable=nullable)
         return jsl.DocumentField(
             name=prop.name, document_cls=subtype, required=t["required"]
         )
@@ -112,7 +112,7 @@ def dataclass_field_to_jsl_field(
 
         if dataclasses.is_dataclass(t["schema"]):
             subtype = jsl.DocumentField(
-                document_cls=dataclass_to_jsl(t["schema"], nullable=nullable)
+                document_cls=dc2jsl(t["schema"], nullable=nullable)
             )
         elif t["schema"] == str:
             subtype = jsl.StringField(name=prop.name)
@@ -128,3 +128,5 @@ def dataclass_field_to_jsl_field(
 
     raise KeyError(prop)
 
+
+convert = dc2jsl

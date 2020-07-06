@@ -97,7 +97,7 @@ def dataclass_field_to_sqla_col(prop: dataclasses.Field) -> sqlalchemy.Column:
     raise KeyError(prop)
 
 
-def dataclass_to_pgsqla(schema, metadata, name=None) -> sqlalchemy.Table:
+def dc2pgsqla(schema, metadata, name=None) -> sqlalchemy.Table:
     if name is None:
         if getattr(schema, "__table_name__", None):
             name = schema.__table_name__
@@ -112,4 +112,9 @@ def dataclass_to_pgsqla(schema, metadata, name=None) -> sqlalchemy.Table:
 
     Table = sqlalchemy.Table(name, metadata, *cols, extend_existing=True)
 
+    # FIXME: reject nested schema
+
     return Table
+
+
+convert = dc2pgsqla

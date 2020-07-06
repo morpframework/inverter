@@ -197,7 +197,7 @@ def dataclass_field_to_colander_schemanode(
         return SchemaNode(**params)
 
     if is_dataclass_field(prop):
-        subtype = dataclass_to_colander(
+        subtype = dc2colander(
             t["type"],
             request=request,
             colander_schema_type=colander.MappingSchema,
@@ -238,7 +238,7 @@ def dataclass_field_to_colander_schemanode(
     raise KeyError(prop)
 
 
-def dataclass_to_colander(
+def dc2colander(
     schema,
     request,
     mode="default",
@@ -363,3 +363,5 @@ def dataclass_to_colander(
     Schema = type("Schema", (colander_schema_type,), attrs)
 
     return Schema
+
+convert = dc2colander
