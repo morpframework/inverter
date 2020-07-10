@@ -8,14 +8,14 @@ _marker = object()
 def drop_empty(schema, data):
     result = {}
     for attr, prop in sorted(schema.__dataclass_fields__.items(), key=lambda x: x[0]):
-        if data.get(attr, None) is None:
+        if data.get(attr, _marker) is _marker:
             if prop.metadata.get("exclude_if_empty", None) is True:
                 continue
         result[attr] = copy.deepcopy(data[attr])
     return result
 
 
-def dataclass_get_type(field, exclude_if_empty=True):
+def dataclass_get_type(field, exclude_if_empty=False):
     metadata = {
         "required": _marker,
         "exclude_if_empty": exclude_if_empty,
@@ -63,6 +63,7 @@ def dataclass_get_type(field, exclude_if_empty=True):
 
     return {"type": typ, "required": required, "metadata": metadata}
 
+
 def is_dataclass_field(field):
     t = dataclass_get_type(field)
 
@@ -70,6 +71,7 @@ def is_dataclass_field(field):
         return t
 
     return None
+
 
 def dataclass_check_type(field, basetype):
 

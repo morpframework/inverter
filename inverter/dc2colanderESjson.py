@@ -8,7 +8,7 @@ import pytz
 import colander
 
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
-from .dc2colander import BindableMappingSchema, SchemaNode, colander_params
+from .dc2colander import SchemaNode, colander_params
 from .dc2colander import dataclass_field_to_colander_schemanode as orig_dc2colander_node
 from .dc2colander import dc2colander
 from .dc2colanderjson import Boolean, Float, Int, Str
@@ -101,7 +101,7 @@ def dc2colanderESjson(
     hidden_fields: typing.List[str] = None,
     readonly_fields: typing.List[str] = None,
     include_schema_validators: bool = True,
-    colander_schema_type: typing.Type[colander.Schema] = BindableMappingSchema,
+    colander_schema_type: typing.Type[colander.Schema] = colander.MappingSchema,
     oid_prefix: str = "deformField",
     request=None,
     mode="default",

@@ -15,14 +15,6 @@ from deform.widget import HiddenWidget, TextAreaWidget, TextInputWidget
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
 
-class BindableMappingSchema(colander.MappingSchema):
-    def bind(self, **kwargs):
-        self._bind_data = kwargs
-
-    def get_binds(self):
-        return getattr(self, "_bind_data", {}).copy()
-
-
 def replace_colander_null(appstruct, value=None):
     out = {}
     for k, v in appstruct.items():
@@ -63,6 +55,8 @@ class PreparersWrapper(object):
         self.mode = mode
 
     def __call__(self, value):
+        if value is colander.null:
+            value = None
         for preparer in self.preparers:
             value = preparer(
                 request=self.request, schema=self.schema, value=value, mode=self.mode
@@ -77,9 +71,8 @@ class SchemaNode(colander.SchemaNode):
             appstruct = self.default
         if appstruct is colander.drop:
             appstruct = colander.null
-        if isinstance(appstruct, colander.deferred):
-            appstruct = colander.null
-
+        # if isinstance(appstruct, colander.deferred):
+        #    appstruct = colander.null
         cstruct = self.typ.serialize(self, appstruct)
         return cstruct
 
@@ -87,10 +80,16 @@ class SchemaNode(colander.SchemaNode):
 def colander_params(prop, oid_prefix, schema, request, mode=None, **kwargs):
     t = dataclass_get_type(prop)
 
+    default_value = None
+    if t["type"] == dict:
+        default_value = {}
+    elif t["type"] == list:
+        default_value = []
+
     params = {
         "name": prop.name,
         "oid": "%s-%s" % (oid_prefix, prop.name),
-        "missing": colander.required if t["required"] else colander.drop,
+        "missing": colander.required if t["required"] else default_value,
     }
 
     if (
@@ -99,7 +98,7 @@ def colander_params(prop, oid_prefix, schema, request, mode=None, **kwargs):
     ):
         params["default"] = prop.default
     elif not t["required"]:
-        params["default"] = colander.drop
+        params["default"] = default_value
 
     if "deform.widget" in prop.metadata.keys():
         params["widget"] = copy.copy(prop.metadata["deform.widget"])
@@ -127,6 +126,27 @@ def colander_params(prop, oid_prefix, schema, request, mode=None, **kwargs):
 
     params.update(kwargs)
     return params
+
+
+class String(colander.String):
+    def __init__(self, encoding=None, allow_empty=True):
+        super().__init__(encoding=encoding, allow_empty=allow_empty)
+
+    def serialize(self, node, appstruct):
+        if appstruct is None:
+            return colander.null
+        return super().serialize(node, appstruct)
+
+    def deserialize(self, node, cstruct):
+        res = super().deserialize(node, cstruct)
+        return res
+
+
+class Mapping(colander.Mapping):
+    def serialize(self, node, appstruct):
+        if appstruct is None:
+            appstruct = {}
+        return super().serialize(node, appstruct)
 
 
 def dataclass_field_to_colander_schemanode(
@@ -157,12 +177,7 @@ def dataclass_field_to_colander_schemanode(
         return SchemaNode(**params)
     if t["type"] == str:
         params = colander_params(
-            prop,
-            oid_prefix,
-            typ=colander.String(),
-            schema=schema,
-            request=request,
-            mode=mode,
+            prop, oid_prefix, typ=String(), schema=schema, request=request, mode=mode,
         )
         return SchemaNode(**params)
     if t["type"] == int:
@@ -209,7 +224,7 @@ def dataclass_field_to_colander_schemanode(
         params = colander_params(
             prop,
             oid_prefix,
-            typ=colander.Mapping(unknown="preserve"),
+            typ=Mapping(unknown="preserve"),
             schema=schema,
             request=request,
             mode=mode,
@@ -247,7 +262,7 @@ def dc2colander(
     hidden_fields: typing.List[str] = None,
     readonly_fields: typing.List[str] = None,
     include_schema_validators: bool = True,
-    colander_schema_type: typing.Type[colander.Schema] = BindableMappingSchema,
+    colander_schema_type: typing.Type[colander.Schema] = colander.MappingSchema,
     oid_prefix: str = "deformField",
     dataclass_field_to_colander_schemanode=dataclass_field_to_colander_schemanode,
 ) -> typing.Type[colander.MappingSchema]:
@@ -335,7 +350,6 @@ def dc2colander(
 
         def validator(self, node, appstruct):
             vdata = replace_colander_null(appstruct)
-            binds = self.get_binds()
             form_validators = getattr(schema, "__validators__", [])
             form_validators += request.app.get_formvalidators(schema)
 
@@ -343,15 +357,20 @@ def dc2colander(
                 required_binds = getattr(form_validator, "__required_binds__", [])
                 kwargs = {}
                 for k in required_binds:
-                    if k not in binds:
+                    if self.bindings is None or (k not in self.bindings.keys()):
                         raise AssertionError(
-                            "Required bind variable '{}' is not set".format(k)
+                            "Required bind variable '{}' is not set on '{}'".format(
+                                k, self
+                            )
                         )
                     else:
-                        kwargs[k] = binds[k]
+                        kwargs[k] = self.bindings[k]
 
                 fe = form_validator(
-                    request=request, schema=schema, data=vdata, mode=mode, **kwargs
+                    schema=schema,
+                    data=vdata,
+                    mode=mode,
+                    **(self.bindings or {"request": request}),
                 )
                 if fe:
                     if fe.get("field", None):
@@ -363,5 +382,6 @@ def dc2colander(
     Schema = type("Schema", (colander_schema_type,), attrs)
 
     return Schema
+
 
 convert = dc2colander

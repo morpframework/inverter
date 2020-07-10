@@ -7,7 +7,7 @@ import pytz
 import colander
 
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
-from .dc2colander import BindableMappingSchema, SchemaNode, colander_params
+from .dc2colander import Mapping, SchemaNode, colander_params
 from .dc2colander import dataclass_field_to_colander_schemanode as orig_dc2colander_node
 from .dc2colander import dc2colander
 
@@ -37,8 +37,10 @@ class Boolean(colander.Boolean):
 
 class Float(colander.Float):
     def deserialize(self, node, cstruct):
-        if cstruct is not None:
-            cstruct = str(cstruct)
+        if cstruct is None:
+            return colander.null
+        if cstruct is not colander.null:
+            cstruct = float(cstruct)
         return super(Float, self).deserialize(node, cstruct)
 
     def serialize(self, node, appstruct):
@@ -52,8 +54,11 @@ class Float(colander.Float):
 
 class Int(colander.Int):
     def deserialize(self, node, cstruct):
-        if cstruct is not None:
-            cstruct = str(cstruct)
+        if cstruct is None:
+            return colander.null
+
+        if cstruct is not colander.null:
+            cstruct = int(cstruct)
         return super(Int, self).deserialize(node, cstruct)
 
     def serialize(self, node, appstruct):
@@ -90,12 +95,16 @@ class Date(colander.Date):
         return (appstruct - epoch_date).days
 
     def deserialize(self, node, cstruct):
-        if cstruct and not isinstance(cstruct, int):
+        if cstruct and not (isinstance(cstruct, int) or isinstance(cstruct, str)):
             raise colander.Invalid(
-                node, "Date is expected to be number of days after 1970-01-01"
+                node,
+                (
+                    "Date is expected to be number of days after 1970-01-01, "
+                    "or in ISO formatted date string"
+                ),
             )
 
-        if cstruct:
+        if cstruct and isinstance(cstruct, int):
             cstruct = (epoch_date + timedelta(days=cstruct)).strftime(r"%Y-%m-%d")
         return super().deserialize(node, cstruct)
 
@@ -111,11 +120,15 @@ class DateTime(colander.DateTime):
         return int(appstruct.timestamp() * 1000)
 
     def deserialize(self, node, cstruct):
-        if cstruct and not isinstance(cstruct, int):
+        if cstruct and not (isinstance(cstruct, int) or isinstance(cstruct, str)):
             raise colander.Invalid(
-                node, "DateTime is expected to in Unix timestamp in miliseconds in UTC"
+                node,
+                (
+                    "DateTime is expected to in Unix timestamp "
+                    "in miliseconds in UTC, or in ISO formatted date string"
+                ),
             )
-        if cstruct:
+        if cstruct and isinstance(cstruct, int):
             cstruct = datetime.fromtimestamp(
                 int(cstruct) / 1000, tz=pytz.UTC
             ).isoformat()
@@ -172,7 +185,7 @@ def dataclass_field_to_colander_schemanode(
         params = colander_params(
             prop,
             oid_prefix,
-            typ=colander.Mapping(unknown="preserve"),
+            typ=Mapping(unknown="preserve"),
             schema=schema,
             request=request,
             mode=mode,
@@ -189,7 +202,7 @@ def dc2colanderjson(
     hidden_fields: typing.List[str] = None,
     readonly_fields: typing.List[str] = None,
     include_schema_validators: bool = True,
-    colander_schema_type: typing.Type[colander.Schema] = BindableMappingSchema,
+    colander_schema_type: typing.Type[colander.Schema] = colander.MappingSchema,
     oid_prefix: str = "deformField",
     request=None,
     mode="default",
@@ -207,5 +220,6 @@ def dc2colanderjson(
         dataclass_field_to_colander_schemanode=dataclass_field_to_colander_schemanode,
         mode=mode,
     )
+
 
 convert = dc2colanderjson

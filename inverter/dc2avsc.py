@@ -4,7 +4,7 @@ import typing
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
 
-def convert_field(prop, schema, request):
+def dataclass_field_to_avsc_field(prop, schema, request):
     t = dataclass_get_type(prop)
     field = {"name": prop.name}
 
@@ -65,5 +65,6 @@ def dc2avsc(
         result["fields"].append(field)
 
     return result
+
 
 convert = dc2avsc
