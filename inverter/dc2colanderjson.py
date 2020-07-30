@@ -6,22 +6,25 @@ import pytz
 
 import colander
 
-from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
+from .common import (dataclass_check_type, dataclass_get_type,
+                     is_dataclass_field)
 from .dc2colander import Mapping, SchemaNode, colander_params
-from .dc2colander import dataclass_field_to_colander_schemanode as orig_dc2colander_node
+from .dc2colander import \
+    dataclass_field_to_colander_schemanode as orig_dc2colander_node
 from .dc2colander import dc2colander
 
 epoch_date = date(1970, 1, 1)
 
 
 class Boolean(colander.Boolean):
-    def deserialize(self, node, cstruct):
-        if cstruct is True:
-            cstruct = "true"
-        elif cstruct is False:
-            cstruct = "false"
-
-        return super(Boolean, self).deserialize(node, cstruct)
+    def deserialize(self, node, appstruct):
+        if appstruct is True:
+            appstruct = "true"
+        elif appstruct is False:
+            appstruct = "false"
+        elif appstruct is None:
+            appstruct = colander.null
+        return super(Boolean, self).deserialize(node, appstruct)
 
     def serialize(self, node, appstruct):
         result = super(Boolean, self).serialize(node, appstruct)

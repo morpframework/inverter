@@ -1,7 +1,7 @@
 import copy
 import dataclasses
 import typing
-from dataclasses import field
+from dataclasses import _MISSING_TYPE, field
 from datetime import date, datetime
 from importlib import import_module
 
@@ -85,6 +85,8 @@ def colander_params(prop, oid_prefix, schema, request, mode=None, **kwargs):
         default_value = {}
     elif t["type"] == list:
         default_value = []
+    elif t["type"] == set:
+        default_value = set()
 
     params = {
         "name": prop.name,
@@ -97,11 +99,18 @@ def colander_params(prop, oid_prefix, schema, request, mode=None, **kwargs):
         and prop.default is not None
     ):
         params["default"] = prop.default
+    elif (
+        not isinstance(prop.default_factory, dataclasses._MISSING_TYPE)
+        and prop.default_factory is not None
+    ):
+        params["default"] = prop.default_factory()
     elif not t["required"]:
         params["default"] = default_value
 
     if "deform.widget" in prop.metadata.keys():
         params["widget"] = copy.copy(prop.metadata["deform.widget"])
+    elif "deform.widget_factory" in prop.metadata.keys():
+        params["widget"] = prop.metadata["deform.widget_factory"](request)
 
     validators = prop.metadata.get("validators", None)
     if validators:
@@ -147,6 +156,18 @@ class Mapping(colander.Mapping):
         if appstruct is None:
             appstruct = {}
         return super().serialize(node, appstruct)
+
+
+class Boolean(colander.Boolean):
+    def serialize(self, node, appstruct):
+        if appstruct is None:
+            return colander.null
+        return super().serialize(node, appstruct)
+
+    def deserialize(self, node, appstruct):
+        if appstruct is None:
+            appstruct = colander.null
+        return super().deserialize(node, appstruct)
 
 
 def dataclass_field_to_colander_schemanode(
@@ -202,12 +223,7 @@ def dataclass_field_to_colander_schemanode(
         return SchemaNode(**params)
     if t["type"] == bool:
         params = colander_params(
-            prop,
-            oid_prefix,
-            typ=colander.Boolean(),
-            schema=schema,
-            request=request,
-            mode=mode,
+            prop, oid_prefix, typ=Boolean(), schema=schema, request=request, mode=mode,
         )
         return SchemaNode(**params)
 
@@ -245,6 +261,16 @@ def dataclass_field_to_colander_schemanode(
             prop,
             oid_prefix,
             typ=deform.FileData(),
+            schema=schema,
+            request=request,
+            mode=mode,
+        )
+        return SchemaNode(**params)
+    if t["type"] == set:
+        params = colander_params(
+            prop,
+            oid_prefix,
+            typ=colander.Set(),
             schema=schema,
             request=request,
             mode=mode,
