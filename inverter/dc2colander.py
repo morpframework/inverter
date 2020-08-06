@@ -88,24 +88,23 @@ def colander_params(prop, oid_prefix, schema, request, mode=None, **kwargs):
     elif t["type"] == set:
         default_value = set()
 
-    params = {
-        "name": prop.name,
-        "oid": "%s-%s" % (oid_prefix, prop.name),
-        "missing": colander.required if t["required"] else default_value,
-    }
-
     if (
         not isinstance(prop.default, dataclasses._MISSING_TYPE)
         and prop.default is not None
     ):
-        params["default"] = prop.default
+        default_value = prop.default
     elif (
         not isinstance(prop.default_factory, dataclasses._MISSING_TYPE)
         and prop.default_factory is not None
     ):
-        params["default"] = prop.default_factory()
-    elif not t["required"]:
-        params["default"] = default_value
+        default_value = prop.default_factory()
+
+    params = {
+        "name": prop.name,
+        "oid": "%s-%s" % (oid_prefix, prop.name),
+        "missing": colander.required if t["required"] else default_value,
+        "default": default_value,
+    }
 
     if "deform.widget" in prop.metadata.keys():
         params["widget"] = copy.copy(prop.metadata["deform.widget"])
