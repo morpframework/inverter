@@ -43,7 +43,12 @@ def dataclass_field_to_colander_schemanode(
         return SchemaNode(**params)
     if t["type"] == str:
         params = colander_params(
-            prop, oid_prefix, typ=Str(), schema=schema, request=request, mode=mode
+            prop,
+            oid_prefix,
+            typ=Str(allow_empty=True),
+            schema=schema,
+            request=request,
+            mode=mode,
         )
         return SchemaNode(**params)
     if t["type"] == int:

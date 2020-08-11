@@ -12,7 +12,8 @@ import deform
 from deform.schema import default_widget_makers
 from deform.widget import HiddenWidget, TextAreaWidget, TextInputWidget
 
-from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
+from .common import (dataclass_check_type, dataclass_get_type,
+                     is_dataclass_field)
 
 
 def replace_colander_null(appstruct, value=None):
@@ -197,7 +198,7 @@ def dataclass_field_to_colander_schemanode(
         return SchemaNode(**params)
     if t["type"] == str:
         params = colander_params(
-            prop, oid_prefix, typ=String(), schema=schema, request=request, mode=mode,
+            prop, oid_prefix, typ=String(allow_empty=True), schema=schema, request=request, mode=mode,
         )
         return SchemaNode(**params)
     if t["type"] == int:

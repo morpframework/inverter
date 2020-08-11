@@ -6,11 +6,9 @@ import pytz
 
 import colander
 
-from .common import (dataclass_check_type, dataclass_get_type,
-                     is_dataclass_field)
+from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 from .dc2colander import Mapping, SchemaNode, colander_params
-from .dc2colander import \
-    dataclass_field_to_colander_schemanode as orig_dc2colander_node
+from .dc2colander import dataclass_field_to_colander_schemanode as orig_dc2colander_node
 from .dc2colander import dc2colander
 
 epoch_date = date(1970, 1, 1)
@@ -155,7 +153,12 @@ def dataclass_field_to_colander_schemanode(
         return SchemaNode(**params)
     if t["type"] == str:
         params = colander_params(
-            prop, oid_prefix, typ=Str(), schema=schema, request=request, mode=mode
+            prop,
+            oid_prefix,
+            typ=Str(allow_empty=True),
+            schema=schema,
+            request=request,
+            mode=mode,
         )
         return SchemaNode(**params)
     if t["type"] == int:
