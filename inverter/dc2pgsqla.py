@@ -112,6 +112,18 @@ def dc2pgsqla(schema, metadata, name=None) -> sqlalchemy.Table:
 
     Table = sqlalchemy.Table(name, metadata, *cols, extend_existing=True)
 
+    for attr, prop in schema.__dataclass_fields__.items():
+        if prop.type in [str, typing.Optional[str]] and prop.metadata.get(
+            "searchable", None
+        ):
+            sqlalchemy.Index(
+                "ix_%s_%s_trgm_search" % (name, attr),
+                getattr(Table.c, attr),
+                postgresql_ops={attr: "gin_trgm_ops"},
+                postgresql_using="gin",
+                unique=False,
+            )
+
     # FIXME: reject nested schema
 
     return Table
