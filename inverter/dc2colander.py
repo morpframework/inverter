@@ -5,6 +5,7 @@ from dataclasses import _MISSING_TYPE, field
 from datetime import date, datetime
 from importlib import import_module
 
+import pytz
 from pkg_resources import resource_filename
 
 import colander
@@ -12,8 +13,7 @@ import deform
 from deform.schema import default_widget_makers
 from deform.widget import HiddenWidget, TextAreaWidget, TextInputWidget
 
-from .common import (dataclass_check_type, dataclass_get_type,
-                     is_dataclass_field)
+from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
 
 def replace_colander_null(appstruct, value=None):
@@ -171,7 +171,12 @@ class Boolean(colander.Boolean):
 
 
 def dataclass_field_to_colander_schemanode(
-    prop: dataclasses.Field, schema, request, oid_prefix="deformField", mode=None
+    prop: dataclasses.Field,
+    schema,
+    request,
+    oid_prefix="deformField",
+    mode=None,
+    default_tzinfo=pytz.UTC,
 ) -> colander.SchemaNode:
 
     t = dataclass_get_type(prop)
@@ -189,7 +194,7 @@ def dataclass_field_to_colander_schemanode(
         params = colander_params(
             prop,
             oid_prefix,
-            typ=colander.DateTime(),
+            typ=colander.DateTime(default_tzinfo=default_tzinfo),
             schema=schema,
             request=request,
             mode=mode,
@@ -198,7 +203,12 @@ def dataclass_field_to_colander_schemanode(
         return SchemaNode(**params)
     if t["type"] == str:
         params = colander_params(
-            prop, oid_prefix, typ=String(allow_empty=True), schema=schema, request=request, mode=mode,
+            prop,
+            oid_prefix,
+            typ=String(allow_empty=True),
+            schema=schema,
+            request=request,
+            mode=mode,
         )
         return SchemaNode(**params)
     if t["type"] == int:
@@ -290,6 +300,7 @@ def dc2colander(
     include_schema_validators: bool = True,
     colander_schema_type: typing.Type[colander.Schema] = colander.MappingSchema,
     oid_prefix: str = "deformField",
+    default_tzinfo=pytz.UTC,
     dataclass_field_to_colander_schemanode=dataclass_field_to_colander_schemanode,
 ) -> typing.Type[colander.MappingSchema]:
     # output colander schema from dataclass schema
@@ -334,6 +345,7 @@ def dc2colander(
                     schema=schema,
                     request=request,
                     mode=mode,
+                    default_tzinfo=default_tzinfo,
                 )
                 attrs[attr] = prop
     else:
@@ -345,6 +357,7 @@ def dc2colander(
                     schema=schema,
                     request=request,
                     mode=mode,
+                    default_tzinfo=default_tzinfo,
                 )
                 attrs[attr] = prop
 

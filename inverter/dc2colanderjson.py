@@ -137,7 +137,12 @@ class DateTime(colander.DateTime):
 
 
 def dataclass_field_to_colander_schemanode(
-    prop: dataclasses.Field, schema, request, oid_prefix="deformField", mode=None,
+    prop: dataclasses.Field,
+    schema,
+    request,
+    oid_prefix="deformField",
+    mode=None,
+    default_tzinfo=pytz.UTC,
 ) -> colander.SchemaNode:
 
     t = dataclass_get_type(prop)
@@ -148,7 +153,12 @@ def dataclass_field_to_colander_schemanode(
         return SchemaNode(**params)
     if t["type"] == datetime:
         params = colander_params(
-            prop, oid_prefix, typ=DateTime(), schema=schema, request=request, mode=mode
+            prop,
+            oid_prefix,
+            typ=DateTime(default_tzinfo=default_tzinfo),
+            schema=schema,
+            request=request,
+            mode=mode,
         )
         return SchemaNode(**params)
     if t["type"] == str:
