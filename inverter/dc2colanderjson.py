@@ -6,9 +6,11 @@ import pytz
 
 import colander
 
-from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
+from .common import (dataclass_check_type, dataclass_get_type,
+                     is_dataclass_field)
 from .dc2colander import Mapping, SchemaNode, colander_params
-from .dc2colander import dataclass_field_to_colander_schemanode as orig_dc2colander_node
+from .dc2colander import \
+    dataclass_field_to_colander_schemanode as orig_dc2colander_node
 from .dc2colander import dc2colander
 
 epoch_date = date(1970, 1, 1)
@@ -133,7 +135,10 @@ class DateTime(colander.DateTime):
             cstruct = datetime.fromtimestamp(
                 int(cstruct) / 1000, tz=pytz.UTC
             ).isoformat()
-        return super().deserialize(node, cstruct)
+        result = super().deserialize(node, cstruct)
+        if result:
+            return result.astimezone(self.default_tzinfo)
+        return result
 
 
 def dataclass_field_to_colander_schemanode(
@@ -222,6 +227,7 @@ def dc2colanderjson(
     oid_prefix: str = "deformField",
     request=None,
     mode="default",
+    default_tzinfo=pytz.UTC,
 ) -> typing.Type[colander.MappingSchema]:
     return dc2colander(
         schema,
@@ -235,6 +241,7 @@ def dc2colanderjson(
         oid_prefix=oid_prefix,
         dataclass_field_to_colander_schemanode=dataclass_field_to_colander_schemanode,
         mode=mode,
+        default_tzinfo=default_tzinfo,
     )
 
 
