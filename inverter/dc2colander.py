@@ -177,9 +177,23 @@ def dataclass_field_to_colander_schemanode(
     oid_prefix="deformField",
     mode=None,
     default_tzinfo=pytz.UTC,
+    metadata=None,
 ) -> colander.SchemaNode:
+    metadata = metadata or {}
 
     t = dataclass_get_type(prop)
+    t["metadata"].update(metadata)
+    field_factory = t["metadata"].get("colander.field_factory", None)
+    if field_factory:
+        params = colander_params(
+            prop,
+            oid_prefix,
+            typ=field_factory(request),
+            schema=schema,
+            request=request,
+            mode=mode,
+        )
+        return SchemaNode(**params)
     if t["type"] == date:
         params = colander_params(
             prop,
@@ -301,6 +315,7 @@ def dc2colander(
     colander_schema_type: typing.Type[colander.Schema] = colander.MappingSchema,
     oid_prefix: str = "deformField",
     default_tzinfo=pytz.UTC,
+    field_metadata=None,
     dataclass_field_to_colander_schemanode=dataclass_field_to_colander_schemanode,
 ) -> typing.Type[colander.MappingSchema]:
     # output colander schema from dataclass schema
@@ -310,7 +325,7 @@ def dc2colander(
     exclude_fields = exclude_fields or []
     hidden_fields = hidden_fields or []
     readonly_fields = readonly_fields or []
-
+    field_metadata = field_metadata or {}
     if mode == "edit":
         readonly_fields += [
             attr
@@ -345,6 +360,7 @@ def dc2colander(
                     schema=schema,
                     request=request,
                     mode=mode,
+                    metadata=field_metadata.get(prop.name, {}),
                     default_tzinfo=default_tzinfo,
                 )
                 attrs[attr] = prop
@@ -357,6 +373,7 @@ def dc2colander(
                     schema=schema,
                     request=request,
                     mode=mode,
+                    metadata=field_metadata.get(prop.name, {}),
                     default_tzinfo=default_tzinfo,
                 )
                 attrs[attr] = prop

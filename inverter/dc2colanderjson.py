@@ -6,11 +6,9 @@ import pytz
 
 import colander
 
-from .common import (dataclass_check_type, dataclass_get_type,
-                     is_dataclass_field)
+from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 from .dc2colander import Mapping, SchemaNode, colander_params
-from .dc2colander import \
-    dataclass_field_to_colander_schemanode as orig_dc2colander_node
+from .dc2colander import dataclass_field_to_colander_schemanode as orig_dc2colander_node
 from .dc2colander import dc2colander
 
 epoch_date = date(1970, 1, 1)
@@ -147,10 +145,35 @@ def dataclass_field_to_colander_schemanode(
     request,
     oid_prefix="deformField",
     mode=None,
+    metadata=None,
     default_tzinfo=pytz.UTC,
 ) -> colander.SchemaNode:
 
     t = dataclass_get_type(prop)
+    metadata = metadata or {}
+    t["metadata"].update(metadata)
+    json_field_factory = t["metadata"].get("colanderjson.field_factory", None)
+    if json_field_factory:
+        params = colander_params(
+            prop,
+            oid_prefix,
+            typ=json_field_factory(request),
+            schema=schema,
+            request=request,
+            mode=mode,
+        )
+        return SchemaNode(**params)
+    field_factory = t["metadata"].get("colander.field_factory", None)
+    if field_factory:
+        params = colander_params(
+            prop,
+            oid_prefix,
+            typ=field_factory(request),
+            schema=schema,
+            request=request,
+            mode=mode,
+        )
+        return SchemaNode(**params)
     if t["type"] == date:
         params = colander_params(
             prop, oid_prefix, typ=Date(), schema=schema, request=request, mode=mode
@@ -196,9 +219,10 @@ def dataclass_field_to_colander_schemanode(
         subtype = dc2colanderjson(
             t["type"],
             colander_schema_type=colander.MappingSchema,
-            schema=schema,
             request=request,
             mode=mode,
+            default_tzinfo=default_tzinfo,
+            field_metadata=metadata,
         )
         return subtype()
 
@@ -213,7 +237,15 @@ def dataclass_field_to_colander_schemanode(
         )
         return SchemaNode(**params)
 
-    return orig_dc2colander_node(prop, oid_prefix, request)
+    return orig_dc2colander_node(
+        prop=prop,
+        schema=schema,
+        request=request,
+        oid_prefix=oid_prefix,
+        mode=mode,
+        default_tzinfo=default_tzinfo,
+        metadata=metadata,
+    )
 
 
 def dc2colanderjson(
@@ -228,6 +260,7 @@ def dc2colanderjson(
     request=None,
     mode="default",
     default_tzinfo=pytz.UTC,
+    field_metadata=None,
 ) -> typing.Type[colander.MappingSchema]:
     return dc2colander(
         schema,
@@ -241,6 +274,7 @@ def dc2colanderjson(
         oid_prefix=oid_prefix,
         dataclass_field_to_colander_schemanode=dataclass_field_to_colander_schemanode,
         mode=mode,
+        field_metadata=field_metadata,
         default_tzinfo=default_tzinfo,
     )
 
