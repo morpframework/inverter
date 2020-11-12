@@ -5,13 +5,12 @@ from dataclasses import _MISSING_TYPE, field
 from datetime import date, datetime
 from importlib import import_module
 
-import pytz
-from pkg_resources import resource_filename
-
 import colander
 import deform
+import pytz
 from deform.schema import default_widget_makers
 from deform.widget import HiddenWidget, TextAreaWidget, TextInputWidget
+from pkg_resources import resource_filename
 
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
@@ -247,7 +246,12 @@ def dataclass_field_to_colander_schemanode(
         return SchemaNode(**params)
     if t["type"] == bool:
         params = colander_params(
-            prop, oid_prefix, typ=Boolean(), schema=schema, request=request, mode=mode,
+            prop,
+            oid_prefix,
+            typ=Boolean(),
+            schema=schema,
+            request=request,
+            mode=mode,
         )
         return SchemaNode(**params)
 
@@ -407,7 +411,12 @@ def dc2colander(
         def validator(self, node, appstruct):
             vdata = replace_colander_null(appstruct)
             form_validators = getattr(schema, "__validators__", [])
-            form_validators += request.app.get_formvalidators(schema)
+            # FIXME: this create a coupling with morpfw, need to decouple
+            app = getattr(request, "app", None)
+            if app:
+                get_formvalidators = getattr(app, "get_formvalidators", None)
+                if get_formvalidators:
+                    form_validators += get_formvalidators(schema)
 
             for form_validator in form_validators:
                 required_binds = getattr(form_validator, "__required_binds__", [])
