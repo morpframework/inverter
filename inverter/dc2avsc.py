@@ -29,11 +29,23 @@ def dataclass_field_to_avsc_field(prop, schema, request):
         return field
 
     if t["type"] == datetime.datetime:
-        field["type"] = [{"type": "long", "logicalType": "timestamp-millis",}, "null"]
+        field["type"] = [
+            {
+                "type": "long",
+                "logicalType": "timestamp-millis",
+            },
+            "null",
+        ]
         return field
 
     if t["type"] == datetime.date:
-        field["type"] = [{"type": "int", "logicalType": "date",}, "null"]
+        field["type"] = [
+            {
+                "type": "int",
+                "logicalType": "date",
+            },
+            "null",
+        ]
         return field
 
     if is_dataclass_field(prop):
@@ -57,7 +69,7 @@ def dc2avsc(
     result = {
         "namespace": namespace,
         "type": "record",
-        "name": str(schema.__class__.__name__),
+        "name": str(schema.__name__),
         "fields": [],
     }
     for attr, prop in schema.__dataclass_fields__.items():
