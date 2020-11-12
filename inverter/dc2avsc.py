@@ -4,28 +4,43 @@ import typing
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
 
-def dataclass_field_to_avsc_field(prop, schema, request):
+def dataclass_field_to_avsc_field(prop, schema, request, ignore_required=False):
     t = dataclass_get_type(prop)
     field = {"name": prop.name}
 
+    if not ignore_required:
+        required = prop.metadata.get("required", False)
+    else:
+        required = False
+
     if t["type"] == str and prop.metadata.get("format", None) == "uuid":
         field["type"] = [{"type": "string", "logicalType": "uuid"}]
+        if not required:
+            field["type"].append("null")
         return field
 
     if t["type"] == str:
-        field["type"] = ["string", "null"]
+        field["type"] = ["string"]
+        if not required:
+            field["type"].append("null")
         return field
 
     if t["type"] == int:
-        field["type"] = ["int", "null"]
+        field["type"] = ["int"]
+        if not required:
+            field["type"].append("null")
         return field
 
     if t["type"] == float:
-        field["type"] = ["double", "null"]
+        field["type"] = ["double"]
+        if not required:
+            field["type"].append("null")
         return field
 
     if t["type"] == bool:
-        field["type"] = ["boolean", "null"]
+        field["type"] = ["boolean"]
+        if not required:
+            field["type"].append("null")
         return field
 
     if t["type"] == datetime.datetime:
@@ -34,8 +49,9 @@ def dataclass_field_to_avsc_field(prop, schema, request):
                 "type": "long",
                 "logicalType": "timestamp-millis",
             },
-            "null",
         ]
+        if not required:
+            field["type"].append("null")
         return field
 
     if t["type"] == datetime.date:
@@ -43,9 +59,10 @@ def dataclass_field_to_avsc_field(prop, schema, request):
             {
                 "type": "int",
                 "logicalType": "date",
-            },
-            "null",
+            }
         ]
+        if not required:
+            field["type"].append("null")
         return field
 
     if is_dataclass_field(prop):
@@ -53,8 +70,14 @@ def dataclass_field_to_avsc_field(prop, schema, request):
         return subtype
 
     if t["type"] == dict:
-        field["type"] = ["string", "null"]
-        # encode as json
+        # FIXME: dictionary field are expected to be
+        # encoded as string for now.
+        # ideally it should be schemaless dict, but
+        # it is unclear how to achieve this with
+        # avro
+        field["type"] = ["string"]
+        if not required:
+            field["type"].append("null")
         return field
     raise TypeError("Unknown Avro type for %s" % t["type"])
 
@@ -65,6 +88,7 @@ def dc2avsc(
     include_fields: typing.List[str] = None,
     exclude_fields: typing.List[str] = None,
     namespace="inverter",
+    ignore_required=True,
 ):
     result = {
         "namespace": namespace,
@@ -73,7 +97,9 @@ def dc2avsc(
         "fields": [],
     }
     for attr, prop in schema.__dataclass_fields__.items():
-        field = dataclass_field_to_avsc_field(prop, schema=schema, request=request)
+        field = dataclass_field_to_avsc_field(
+            prop, schema=schema, request=request, ignore_required=ignore_required
+        )
         result["fields"].append(field)
 
     return result
