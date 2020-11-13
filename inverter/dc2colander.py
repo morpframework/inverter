@@ -16,6 +16,16 @@ from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
 
 def replace_colander_null(appstruct, value=None):
+    """
+    Replace ``colander.null`` with default value
+
+    :param appstruct: colander ``appstruct`` dictionary
+    :type appstruct: ``dict``
+    :param value: value to replace ``colander.null`` with, defaults to ``None``
+
+    :return: ``appstruct`` dictionary that have been replaced
+    :rtype: ``dict``
+    """
     out = {}
     for k, v in appstruct.items():
         if isinstance(v, dict):
@@ -28,13 +38,44 @@ def replace_colander_null(appstruct, value=None):
 
 
 class ValidatorsWrapper(object):
-    def __init__(self, validators, request, schema, mode=None):
+    """
+    This wrapper is used internally to validate data using multiple validators
+    """
+
+    def __init__(
+        self,
+        validators: typing.List[typing.Callable],
+        request: typing.Any,
+        schema,
+        mode=None,
+    ):
+        """
+        :param validators: list of validator callables that accept following parameters:
+                           - ``request`` - request object
+                           - ``schema`` - dataclass schema
+                           - ``field`` - field name
+                           - ``value`` - value to be validated
+                           - ``mode`` - one of the following: ``'default'``, ``'edit'``, ``'edit-process'``
+
+        :param request: request object that is passed to the schema converter. Accept any.
+        :param schema: dataclass schema
+        :param mode:  one of the following: ``default``, ``'edit'``, ``'edit-process'``
+
+        """
         self.request = request
         self.schema = schema
         self.mode = mode
         self.validators = validators
 
     def __call__(self, node, value):
+        """
+        Execute validators and raise errors
+
+        :param node: ``colander`` field node
+        :param value: value to be validated
+
+        :raises colander.Invalid: raised when invalid data is found
+        """
         for validator in self.validators:
             error = validator(
                 request=self.request,
@@ -48,13 +89,39 @@ class ValidatorsWrapper(object):
 
 
 class PreparersWrapper(object):
-    def __init__(self, preparers, request, schema, mode=None):
+    """
+    This wrapper is used internally to prepare data using multiple preparers
+    """
+
+    def __init__(
+        self, preparers: typing.List[typing.Callable], request, schema, mode=None
+    ):
+        """
+        :param preparers: list of validator callables that accept following parameters:
+                           - ``request`` - request object
+                           - ``schema`` - dataclass schema
+                           - ``value`` - value to be validated
+                           - ``mode`` - one of the following: ``'default'``, ``'edit'``, ``'edit-process'``
+
+        :param request: request object that is passed to the schema converter. Accept any.
+        :param schema: dataclass schema
+        :param mode:  one of the following: ``'default'``, ``'edit'``, ``'edit-process'``
+
+        """
         self.preparers = preparers
         self.request = request
         self.schema = schema
         self.mode = mode
 
-    def __call__(self, value):
+    def __call__(self, value: typing.Any) -> typing.Any:
+        """
+
+        Execute preparers against ``value``
+
+        :param value: data value
+        :return: prepared value
+
+        """
         if value is colander.null:
             value = None
         for preparer in self.preparers:
@@ -65,7 +132,19 @@ class PreparersWrapper(object):
 
 
 class SchemaNode(colander.SchemaNode):
+    """
+    Replace the way SchemaNode handles serialization
+
+    :meta private:
+    """
+
     def serialize(self, appstruct=colander.null):
+        """
+        If ``colander.drop`` is used, ``deform`` seems to output ``colander.drop``
+        as the default value in the forms. This fixes that.
+
+        :meta private:
+        """
         # workaround with deform serialization issue with colander.drop
         if appstruct is colander.null:
             appstruct = self.default
@@ -77,7 +156,27 @@ class SchemaNode(colander.SchemaNode):
         return cstruct
 
 
-def colander_params(prop, oid_prefix, schema, request, mode=None, **kwargs):
+def colander_params(
+    prop: dataclasses.Field,
+    oid_prefix: str,
+    schema: type,
+    request: typing.Any,
+    mode=None,
+    **kwargs,
+) -> dict:
+    """
+    Get parameters for ``colander.SchemaNode`` constructor from ``dataclass.Field``
+
+    :param prop: ``dataclass.Field`` object
+    :param oid_prefix: string prefix for use as field oid
+    :param schema: ``dataclass`` based class
+    :param request: ``request`` object. Accepts anything, as it is merely passed to validators
+    :param mode: one of the following: ``'default'``, ``'edit'``, ``'edit-process'``
+    :param kwargs: additional parameters to be included into output. Will override derived parameters.
+
+    :return: dictionary of parameters for ``colander.SchemaNode``
+
+    """
     t = dataclass_get_type(prop)
 
     default_value = None
@@ -178,6 +277,20 @@ def dataclass_field_to_colander_schemanode(
     default_tzinfo=pytz.UTC,
     metadata=None,
 ) -> colander.SchemaNode:
+
+    """
+    Converts ``dataclass.Field`` to ``colander.SchemaNode``
+
+    :param prop: ``dataclass.Field`` object
+    :param schema: ``dataclass`` class
+    :param request: request object
+    :param oid_prefix: prefix for field OID, defaults to 'deformField'
+    :param mode: One of the following: ``'default'``, ``'edit'``, ``'edit-process'``
+    :param default_tzinfo: Default timezone to use for ``datetime`` handling, defaults to ``pytz.UTC``
+    :param metadata: additional metadata override
+
+    :return: converted ``colander.SchemaNode``
+    """
     metadata = metadata or {}
 
     t = dataclass_get_type(prop)
@@ -308,8 +421,9 @@ def dataclass_field_to_colander_schemanode(
 
 
 def dc2colander(
-    schema,
-    request,
+    schema: type,
+    *,
+    request: typing.Any = None,
     mode="default",
     include_fields: typing.List[str] = None,
     exclude_fields: typing.List[str] = None,
@@ -322,6 +436,50 @@ def dc2colander(
     field_metadata=None,
     dataclass_field_to_colander_schemanode=dataclass_field_to_colander_schemanode,
 ) -> typing.Type[colander.MappingSchema]:
+    """
+    Converts ``dataclass`` to ``colander.Schema``
+
+    :param schema: ``dataclass`` class to be used as schema
+    :param request: a request object. This is mainly be passed down to downstream factories, accepts anything.
+    :param mode: this flag is used to affect the decision on how validators validate data. accepts one of the following:
+                 - ``'default'``
+                 - ``'edit'`` - flag used when generating edit form
+                 - ``'edit-process'`` - flag used when generating edit processing form
+    :param include_fields: List of field names to include
+    :type include_fields: typing.List[str]
+    :param exclude_fields: List of field names to exclude
+    :type exclude_fields: typing.List[str]
+    :param hidden_fields: List of field names to hide
+    :type hidden_fields: typing.List[str]
+    :param readonly_fields: List of field names to made readonly
+    :type readonly_fields: typing.List[str]
+    :param include_schema_validators: Set whether to include ``__validators__`` from ``dataclass`` during convertion
+    :type include_schema_validators: bool
+    :param colander_schema_type: base class to use as created output, defaults to colander.MappingSchema.
+    :param oid_prefix: string to use as deform OID prefix
+    :param default_tzinfo: default timezone for ``datetime`` handling, defaults to ``pytz.UTC``
+    :param field_metadata: a dictionary for overriding field metadata. Structure: ``{'<fieldname>': {'metadatakey': 'metadataval'}}``
+    :param dataclass_field_to_colander_schemanode: ``colander.SchemaNode`` factory function.
+
+    :return: ``colander.Schema`` class
+
+    **Field metadata handling**
+
+    This function will read several metadata from fields and use it to derive the parameters.
+
+    - ``required: bool`` - flag field as required
+    - ``title: str`` - field title
+    - ``description: str`` - field description
+    - ``validators: typing.List[typing.Callable]`` - a list of validator callables
+    - ``preparers: typing.List[typing.Callable]`` - a list of preparer callables
+    - ``deform.widget: deform.widget.Widget`` - ``deform.widget.Widget`` object to use as widget.
+    - ``deform.widget_factory: typing.Callable`` - a callable with that accept ``request`` and
+      returns a ``deform.widget.Widget`` object.
+    - ``colander.field_factory: typing.Callable`` - a callable that accept ``request`` and returns a
+      ``colander.SchemaType`` object.
+
+
+    """
     # output colander schema from dataclass schema
     attrs = {}
 

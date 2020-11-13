@@ -3,9 +3,8 @@ import json
 import typing
 from datetime import date, datetime, timedelta
 
-import pytz
-
 import colander
+import pytz
 
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 from .dc2colander import SchemaNode, colander_params
@@ -100,7 +99,12 @@ def dataclass_field_to_colander_schemanode(
 
     if t["type"] == dict:
         params = colander_params(
-            prop, oid_prefix, typ=JSON(), schema=schema, request=request, mode=mode,
+            prop,
+            oid_prefix,
+            typ=JSON(),
+            schema=schema,
+            request=request,
+            mode=mode,
         )
         return SchemaNode(**params)
 
@@ -117,6 +121,7 @@ def dataclass_field_to_colander_schemanode(
 
 def dc2colanderavro(
     schema,
+    *,
     include_fields: typing.List[str] = None,
     exclude_fields: typing.List[str] = None,
     hidden_fields: typing.List[str] = None,
@@ -129,6 +134,12 @@ def dc2colanderavro(
     default_tzinfo=None,
     field_metadata=None,
 ) -> typing.Type[colander.MappingSchema]:
+    """
+    Converts ``dataclass`` to ``colander.Schema`` that serializes to Avro compatible
+    dictionary.
+
+    Accepted parameters are the same as ``inverter.dc2colander.convert``.
+    """
     return dc2colander(
         schema,
         request=request,

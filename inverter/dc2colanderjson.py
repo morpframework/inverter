@@ -2,9 +2,8 @@ import dataclasses
 import typing
 from datetime import date, datetime, timedelta
 
-import pytz
-
 import colander
+import pytz
 
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 from .dc2colander import Mapping, SchemaNode, colander_params
@@ -250,6 +249,7 @@ def dataclass_field_to_colander_schemanode(
 
 def dc2colanderjson(
     schema,
+    *,
     include_fields: typing.List[str] = None,
     exclude_fields: typing.List[str] = None,
     hidden_fields: typing.List[str] = None,
@@ -262,6 +262,12 @@ def dc2colanderjson(
     default_tzinfo=pytz.UTC,
     field_metadata=None,
 ) -> typing.Type[colander.MappingSchema]:
+
+    """
+    Converts ``dataclass`` to ``colander.Schema`` that serializes to JSON.
+
+    Accepted parameters are the same as ``inverter.dc2colander.convert``.
+    """
     return dc2colander(
         schema,
         request=request,
