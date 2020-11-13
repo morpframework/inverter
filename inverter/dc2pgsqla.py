@@ -5,14 +5,12 @@ from dataclasses import field
 from datetime import date, datetime
 from importlib import import_module
 
-from pkg_resources import resource_filename
-
 import colander
-import morpfw.sql
 import sqlalchemy
 import sqlalchemy_jsonfield as sajson
 import sqlalchemy_utils as sautils
 from deform.widget import HiddenWidget
+from pkg_resources import resource_filename
 
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
@@ -61,7 +59,7 @@ def dataclass_field_to_sqla_col(prop: dataclasses.Field) -> sqlalchemy.Column:
         if str_format == "text":
             params = sqlalchemy_params(prop, typ=sqlalchemy.Text())
         elif str_format == "uuid":
-            params = sqlalchemy_params(prop, typ=morpfw.sql.GUID())
+            params = sqlalchemy_params(prop, typ=sautils.UUIDType())
         elif str_format == "fulltextindex":
             params = sqlalchemy_params(prop, typ=sautils.TSVectorType)
         else:
@@ -97,7 +95,27 @@ def dataclass_field_to_sqla_col(prop: dataclasses.Field) -> sqlalchemy.Column:
     raise KeyError(prop)
 
 
-def dc2pgsqla(schema, metadata, name=None) -> sqlalchemy.Table:
+def dc2pgsqla(schema, metadata, *, name=None) -> sqlalchemy.Table:
+    """
+    Convert ``dataclass`` to ``sqlalchemy`` ORM model
+
+    :param schema: ``dataclass`` class
+    :param metadata: ``sqlalchemy.MetaData`` object
+    :param name: model name
+
+    :return: ``sqlalchemy`` ORM class
+
+    **Field metadata handling**
+
+    - ``primary_key: bool`` - primary key flag
+    - ``index: bool`` - flag on whether to index the column
+    - ``autoincrement: bool`` - flag on whether to make column autoincrement
+    - ``unique: bool`` - flag on whether to make column unique
+    - ``searchable: bool`` - flag on whether to make column searchable using PGSQL Trigram
+    - ``format: str`` - format of data: ``uuid``, ``text``, ``fulltextindex``,
+      ``bigint``, ``numeric``. This forces SQLAlchemy to use specific data type
+      for the format.
+    """
     if name is None:
         if getattr(schema, "__table_name__", None):
             name = schema.__table_name__

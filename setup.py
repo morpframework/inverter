@@ -12,7 +12,7 @@ desc = '\n'.join([readfile('README.rst'), readfile('CHANGELOG.rst')])
 
 setup(name='inverter',
       version=version,
-      description="Convert dataclass to other schemas",
+      description="Convert dataclass to another class",
       long_description=desc,
       classifiers=[
         'Development Status :: 4 - Beta',

@@ -1,5 +1,5 @@
 =============================================
-inverter: Convert dataclass to other schemas
+inverter: Convert dataclass to another class
 =============================================
 
 

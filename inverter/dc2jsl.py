@@ -13,7 +13,21 @@ def _set_nullable(prop):
     return prop
 
 
-def dc2jsl(schema, nullable=False, additional_properties=False, update_mode=False):
+def dc2jsl(
+    schema, *, ignore_required=False, additional_properties=False, mode="default"
+):
+    """
+    Convert ``dataclass`` to ``jsl`` JSON Schema.
+
+    :param schema: ``dataclass`` class
+    :param ignore_required: if ``True``, set all fields as nullable
+    :param additional_properties: Allow ``additional_properties`` in JSON Schema
+    :param mode: mode flag
+
+    :return: ``jsl.Document`` class
+    """
+
+    nullable = ignore_required
     attrs = {}
 
     _additional_properties = additional_properties
@@ -22,9 +36,7 @@ def dc2jsl(schema, nullable=False, additional_properties=False, update_mode=Fals
         additional_properties = _additional_properties
 
     for attr, prop in schema.__dataclass_fields__.items():
-        prop = dataclass_field_to_jsl_field(
-            prop, nullable=nullable, update_mode=update_mode
-        )
+        prop = dataclass_field_to_jsl_field(prop, nullable=nullable, mode=mode)
         if nullable:
             attrs[attr] = _set_nullable(prop)
         else:
@@ -43,8 +55,13 @@ def dc2jsl(schema, nullable=False, additional_properties=False, update_mode=Fals
 
 
 def dataclass_field_to_jsl_field(
-    prop: dataclasses.Field, nullable=False, update_mode=False
+    prop: dataclasses.Field, nullable=False, mode="default"
 ) -> jsl.BaseField:
+
+    if mode in ["edit", "edit-process"]:
+        update_mode = True
+    else:
+        update_mode = False
     t = dataclass_check_type(prop, date)
     if t:
         if update_mode:

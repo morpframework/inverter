@@ -5,6 +5,16 @@ from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
 
 def dataclass_field_to_avsc_field(prop, schema, request, ignore_required=False):
+    """
+    Converts ``dataclass.Field`` to Avro schema field dictionary.
+
+    :param prop: ``dataclass.Field`` object
+    :param schema: ``dataclass`` class
+    :param request: request object, accepts any.
+    :param ignore_required: if ``True``, force all fields as non-required
+    :type ignore_required: bool
+    """
+
     t = dataclass_get_type(prop)
     field = {"name": prop.name}
 
@@ -84,12 +94,28 @@ def dataclass_field_to_avsc_field(prop, schema, request, ignore_required=False):
 
 def dc2avsc(
     schema,
-    request,
+    *,
+    request=None,
     include_fields: typing.List[str] = None,
     exclude_fields: typing.List[str] = None,
     namespace="inverter",
     ignore_required=True,
 ):
+    """
+    Converts ``dataclass`` to Avro Schema JSON dictionary
+
+    :param schema: ``dataclass`` class
+    :param request: request object, accepts Any
+    :param include_fields: List of field names to include
+    :type include_fields: typing.List[str]
+    :param exclude_fields: List of field names to exclude
+    :type exclude_fields: typing.List[str]
+    :param namespace: Avro schema namespace, defaults to 'inverter'
+    :param ignore_required: if True, force all fields to be non-required
+    :type ignore_required: bool
+
+    :return: dictionary representing Avro Schema.
+    """
     result = {
         "namespace": namespace,
         "type": "record",

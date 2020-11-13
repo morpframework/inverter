@@ -3,11 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-inverter: Convert dataclass to other schema
+inverter: Convert dataclass to another class
 ============================================
 
-``inverter`` is a library that help convert dataclass to other schemas. Supported
-output schemas are:
+``inverter`` is a library that help convert D(ata)C(lass) to A(nother) C(lass). Supported
+output classes / schemas are:
 
 - `colander <https://docs.pylonsproject.org/projects/colander/en/latest/>`_ schema model.
 - `Apache Avro <http://avro.apache.org/docs/current/spec.html>`_ schema JSON.

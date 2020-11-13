@@ -8,3 +8,7 @@ Table of Contents
    index.rst
    quickstart.rst
    colander.rst
+   avsc.rst
+   jsl.rst
+   sqla.rst
+
