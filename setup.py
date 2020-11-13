@@ -28,6 +28,10 @@ setup(name='inverter',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
+          'colander',
+          'jsl',
+          'sqlalchemy',
+          'sqlalchemy_utils'
           # -*- Extra requirements: -*-
       ],
       entry_points="""
