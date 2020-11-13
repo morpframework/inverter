@@ -145,6 +145,9 @@ def dc2colanderESjson(
     Converts ``dataclass`` to ``colander.Schema`` that serializes to ElasticSearch
     compatible dictionary.
 
+    - date is serialized as YYYY-MM-DD string
+    - datetime is serialized as iso8601 string
+
     Accepted parameters are the same as ``inverter.dc2colander.convert``.
     """
     return dc2colander(

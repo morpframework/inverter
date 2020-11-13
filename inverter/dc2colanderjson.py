@@ -266,6 +266,9 @@ def dc2colanderjson(
     """
     Converts ``dataclass`` to ``colander.Schema`` that serializes to JSON.
 
+    - date is serialized as number days from epoch
+    - datetime is serialized as number of miliseconds from epoch
+
     Accepted parameters are the same as ``inverter.dc2colander.convert``.
     """
     return dc2colander(

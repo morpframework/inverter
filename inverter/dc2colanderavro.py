@@ -138,6 +138,10 @@ def dc2colanderavro(
     Converts ``dataclass`` to ``colander.Schema`` that serializes to Avro compatible
     dictionary.
 
+    - date is serialized as number days from epoch
+    - datetime is serialized as number of miliseconds from epoch
+    - dictionary (JSON field) is serialized as JSON string
+
     Accepted parameters are the same as ``inverter.dc2colander.convert``.
     """
     return dc2colander(
