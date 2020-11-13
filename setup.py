@@ -31,7 +31,10 @@ setup(name='inverter',
           'colander',
           'jsl',
           'sqlalchemy',
-          'sqlalchemy_utils'
+          'sqlalchemy_utils',
+          'sqlalchemy_jsonfield',
+          'deform',
+          'pytz',
           # -*- Extra requirements: -*-
       ],
       entry_points="""
