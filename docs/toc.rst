@@ -7,3 +7,4 @@ Table of Contents
 
    index.rst
    quickstart.rst
+   colander.rst

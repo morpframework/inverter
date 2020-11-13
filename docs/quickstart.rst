@@ -40,6 +40,8 @@ The same schema can also be converted to Avro Schema
 
 .. code-block:: python
 
+   from inverter import dc2avsc
+   
    avsc = dc2avsc.convert(LoginForm, request, namespace='myapp')
 
    assert avsc == {
