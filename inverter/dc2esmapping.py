@@ -27,9 +27,9 @@ def dataclass_field_to_esmapping(
         return mfield
     if t["type"] == str:
         fmt = meta.get("format", None)
-        if fmt == "text":
-            mfield = {"type": "text"}
-        elif fmt.startswith("text/"):
+        if fmt is None:
+            mfield = {"type": "keyword"}
+        elif fmt == "text" or fmt.startswith("text/"):
             mfield = {"type": "text"}
         else:
             mfield = {"type": "keyword"}
