@@ -29,12 +29,14 @@ def dataclass_field_to_esmapping(
         fmt = meta.get("format", None)
         if fmt == "text":
             mfield = {"type": "text"}
+        elif fmt.startswith("text/"):
+            mfield = {"type": "text"}
         else:
             mfield = {"type": "keyword"}
         mfield.update(mapping_opts)
         return mfield
     if t["type"] == int:
-        mfield = {"type": "integer"}
+        mfield = {"type": "long"}
         mfield.update(mapping_opts)
         return mfield
     if t["type"] == float:
