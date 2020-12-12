@@ -359,12 +359,7 @@ def dataclass_field_to_colander_schemanode(
         return SchemaNode(**params)
     if t["type"] == bool:
         params = colander_params(
-            prop,
-            oid_prefix,
-            typ=Boolean(),
-            schema=schema,
-            request=request,
-            mode=mode,
+            prop, oid_prefix, typ=Boolean(), schema=schema, request=request, mode=mode,
         )
         return SchemaNode(**params)
 
@@ -568,7 +563,7 @@ def dc2colander(
 
         def validator(self, node, appstruct):
             vdata = replace_colander_null(appstruct)
-            form_validators = getattr(schema, "__validators__", [])
+            form_validators = copy.deepcopy(getattr(schema, "__validators__", []))
             # FIXME: this create a coupling with morpfw, need to decouple
             app = getattr(request, "app", None)
             if app:
