@@ -33,6 +33,12 @@ class DateTime(colander.DateTime):
             return None
         return result
 
+    def deserialize(self, node, cstruct):
+        res = super().deserialize(node, cstruct)
+        if res:
+            res = res.astimezone(self.default_tzinfo)
+        return res
+
 
 def dataclass_field_to_colander_schemanode(
     prop: dataclasses.Field,
