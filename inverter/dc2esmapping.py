@@ -3,7 +3,8 @@ import dataclasses
 import typing
 from datetime import date, datetime
 
-from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
+from .common import (dataclass_check_type, dataclass_get_type,
+                     is_dataclass_field)
 
 
 def dataclass_field_to_esmapping(
@@ -66,14 +67,29 @@ def dataclass_field_to_esmapping(
 
 
 def dc2esmapping(
-    schema: type, *, request: typing.Any = None, metadata: typing.Optional[dict] = None
+    schema: type,
+    *,
+    request: typing.Any = None,
+    metadata: typing.Optional[dict] = None,
+    include_fields=None,
+    exclude_fields=None,
 ):
 
+    include_fields = include_fields or []
+    exclude_fields = exclude_fields or []
     mprops = {}
-    for attr, prop in schema.__dataclass_fields__.items():
-        mprops[attr] = dataclass_field_to_esmapping(
-            prop, schema, request, metadata=metadata
-        )
+    if include_fields:
+        for attr, prop in schema.__dataclass_fields__.items():
+            if prop.name in include_fields and prop.name not in exclude_fields:
+                mprops[attr] = dataclass_field_to_esmapping(
+                    prop, schema, request, metadata=metadata
+                )
+    else:
+        for attr, prop in schema.__dataclass_fields__.items():
+            if prop.name not in exclude_fields:
+                mprops[attr] = dataclass_field_to_esmapping(
+                    prop, schema, request, metadata=metadata
+                )       
 
     return {"mappings": {"properties": mprops}}
 
