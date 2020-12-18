@@ -5,13 +5,12 @@ from dataclasses import field
 from datetime import date, datetime
 from importlib import import_module
 
-from pkg_resources import resource_filename
-
 import colander
 import sqlalchemy
 import sqlalchemy_jsonfield as sajson
 import sqlalchemy_utils as sautils
 from deform.widget import HiddenWidget
+from pkg_resources import resource_filename
 
 from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
@@ -64,7 +63,7 @@ def dataclass_field_to_sqla_col(prop: dataclasses.Field) -> sqlalchemy.Column:
         elif str_format == "fulltextindex":
             params = sqlalchemy_params(prop, typ=sautils.TSVectorType)
         else:
-            str_len = prop.metadata.get("length", 1024)
+            str_len = prop.metadata.get("length", 256)
             params = sqlalchemy_params(prop, typ=sqlalchemy.String(str_len))
         return sqlalchemy.Column(**params)
     if t["type"] == int:
