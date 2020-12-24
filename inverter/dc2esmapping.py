@@ -3,8 +3,7 @@ import dataclasses
 import typing
 from datetime import date, datetime
 
-from .common import (dataclass_check_type, dataclass_get_type,
-                     is_dataclass_field)
+from .common import dataclass_check_type, dataclass_get_type, is_dataclass_field
 
 
 def dataclass_field_to_esmapping(
@@ -31,7 +30,7 @@ def dataclass_field_to_esmapping(
         if fmt is None:
             mfield = {"type": "keyword"}
         elif fmt == "text" or fmt.startswith("text/"):
-            mfield = {"type": "text"}
+            mfield = {"type": "text", "fields": {"raw": {"type": "keyword"}}}
         else:
             mfield = {"type": "keyword"}
         mfield.update(mapping_opts)
@@ -89,7 +88,7 @@ def dc2esmapping(
             if prop.name not in exclude_fields:
                 mprops[attr] = dataclass_field_to_esmapping(
                     prop, schema, request, metadata=metadata
-                )       
+                )
 
     return {"mappings": {"properties": mprops}}
 
