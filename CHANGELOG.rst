@@ -1,7 +1,7 @@
 Changelog 
 ==========
 
-0.1.1 (unreleased)
+0.1.1 (2020-12-24)
 ------------------
 
 - added `dc2esmapping` - converts dataclass to elasticsearch mapping

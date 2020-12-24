@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.1.1.dev0'
+version = '0.1.1'
 
 def readfile(name):
     with open(os.path.join(os.path.dirname(__file__), name)) as f:
