@@ -591,9 +591,13 @@ def dc2colander(
                     **(self.bindings or {"request": request}),
                 )
                 if fe:
+                    exc = colander.Invalid(node, fe["message"])
                     if fe.get("field", None):
-                        raise colander.Invalid(node[fe["field"]], fe["message"])
-                    raise colander.Invalid(node, fe["message"])
+                        exc[fe["field"]] = fe["message"]
+                    if fe.get("fields", None):
+                        for fn in fe["fields"]:
+                            exc[fn] = fe["message"]
+                    raise exc
 
         attrs["validator"] = validator
 
