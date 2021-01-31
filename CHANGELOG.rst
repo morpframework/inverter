@@ -4,7 +4,8 @@ Changelog
 0.1.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- set error message correctly in relevant fields on form 
+  validation failure
 
 
 0.1.1 (2020-12-24)
