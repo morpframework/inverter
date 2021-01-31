@@ -1,7 +1,7 @@
 Changelog 
 ==========
 
-0.1.2 (unreleased)
+0.1.2 (2021-01-31)
 ------------------
 
 - set error message correctly in relevant fields on form 
